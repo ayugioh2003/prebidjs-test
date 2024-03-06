@@ -1,0 +1,150 @@
+<!-- 參考舊文件教學修改 -->
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      async
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    ></script>
+    <script
+      async
+      src="https://static.aottercdn.com/trek/media/d01821dc-d0e6-41f3-85c8-d9551d46d7a8.js"
+    ></script>
+    <script>
+      var sizes = [[300, 250]]
+      var PREBID_TIMEOUT = 1500
+      var FAILSAFE_TIMEOUT = 3000
+      var adUnits = [
+        {
+          code: '/21693702494/aotter_prebid_ad_300x250', // from GAM
+          mediaTypes: {
+            banner: {
+              sizes: sizes,
+            },
+          },
+          bids: [
+            {
+              bidder: 'aseal',
+              params: {
+                // your Aottertrek place uuid
+                placeUid: 'f1ba50f4-1c7d-4448-b5c8-de26db863180',
+                storageAllowed: true,
+              },
+            },
+            // {
+            //   bidder: "appnexus",
+            //   params: { placementId: "234235" }
+            // }
+          ],
+        },
+      ]
+
+      var googletag = googletag || {}
+      googletag.cmd = googletag.cmd || []
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad()
+      })
+      var pbjs = pbjs || {}
+      pbjs.que = pbjs.que || []
+      pbjs.que.push(function () {
+        pbjs.addAdUnits(adUnits)
+        pbjs.setConfig({
+          debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: (bidRequest) => {
+                    // intercept all  bids that have adUnitCode === 'test-div'
+                    // adUnitCode: 'div-gpt-ad-1642581403289-0',
+                    console.log('bidRequest', bidRequest)
+                    return bidRequest.adUnitCode === 'div-gpt-ad-1642581403289-0' && bidRequest.bidder === 'aseal'
+                  },
+                  then: {
+                    // mock their response with sane defaults and `cpm: 10`
+                    cpm: 10,
+                  },
+                },
+              ],
+            }, debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: (bidRequest) => {
+                    // intercept all  bids that have adUnitCode === 'test-div'
+                    // adUnitCode: 'div-gpt-ad-1642581403289-0',
+                    console.log('bidRequest', bidRequest)
+                    return bidRequest.adUnitCode === '220927_post__content_1_2_prod' && bidRequest.bidder === 'aseal'
+                  },
+                  then: {
+                    // mock their response with sane defaults and `cpm: 10`
+                    cpm: 10,
+                  },
+                },
+              ],
+            },
+          aseal: {
+            // your Aottertrek client Id
+            clientId: 'yEFcFoJaruNorh5RqtuR',
+           
+          },
+          currency: {
+            adServerCurrency: 'TWD',
+            conversionRateFile:
+              'https://cdn.jsdelivr.net/gh/taiwan-publisher-group/prebid-currencies-for-twd/docs/latest.json',
+          },
+        })
+        pbjs.requestBids({
+          bidsBackHandler: initAdserver,
+          timeout: PREBID_TIMEOUT,
+        })
+      })
+      function initAdserver() {
+        if (pbjs.initAdserverSet) return
+        pbjs.initAdserverSet = true
+        googletag.cmd.push(function () {
+          pbjs.setTargetingForGPTAsync && pbjs.setTargetingForGPTAsync()
+          googletag.pubads().refresh()
+        })
+      }
+
+      // In case PBJS doesn't load
+      setTimeout(function () {
+        initAdserver()
+      }, FAILSAFE_TIMEOUT)
+      // From GAM - GPT code
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot(
+            '/93702494/aotter_prebid_ad_300x250',
+            [300, 250],
+            'div-gpt-ad-1642581403289-0'
+          )
+          .addService(googletag.pubads())
+        googletag.pubads().enableSingleRequest()
+        googletag.enableServices()
+      })
+    </script>
+  </head>
+  <body>
+    <h2>Basic Prebid.js Example</h2>
+    <a
+      target="_blank"
+      href="https://aotter.gitbook.io/staging-aottertrek-sdk-doc/web/aseal-prebid/full-sample-code"
+      >舊文件連結</a
+    >
+    <h5>Div-1</h5>
+    <div
+      id="div-gpt-ad-1642581403289-0"
+      style="min-width: 300px; min-height: 250px"
+    >
+      <script>
+        googletag.cmd.push(function () {
+          googletag.display('div-gpt-ad-1642581403289-0')
+        })
+      </script>
+    </div>
+  </body>
+</html>
