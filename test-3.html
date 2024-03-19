@@ -195,6 +195,8 @@
           if (div) {
             let iframe = document.createElement('iframe')
             iframe.style.border = '0'
+            iframe.style.objectFit = 'cover'
+            iframe.style.objectPosition = 'center'
             div.appendChild(iframe)
             var iframeDoc = iframe.contentWindow.document
 

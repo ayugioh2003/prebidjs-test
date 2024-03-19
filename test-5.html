@@ -1,0 +1,28 @@
+<!-- 嘗試引入 universal creative -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prebid Universal Creative Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@latest/dist/banner.js"></script>
+</head>
+<body>
+  <div id="ad-container"></div>
+  <script>
+    var ucTagData = {};
+    ucTagData.pubUrl = "local.aotter.net";
+    ucTagData.adId = "123456";
+    ucTagData.targetingMap = {
+      "geo": { "country": "US" },
+      "keywords": ["tech", "gadgets"]
+    };
+
+    try {
+      ucTag.renderAd(document.getElementById("ad-container"), ucTagData);
+    } catch (e) {
+      console.error("Error rendering ad:", e);
+    }
+  </script>
+</body>
+</html>
