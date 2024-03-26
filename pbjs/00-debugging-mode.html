@@ -1,0 +1,234 @@
+<!-- 電少標籤腳本改 -->
+<!-- https://trek.aotter.net/clam/show?appName=trek&id=9ee1ea1d-cc69-4138-93a3-98311bad63af&collectionName=trekTagScript -->
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    <script
+      async
+      src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"
+    ></script>
+
+    <!-- <script
+      async
+      src="https://static.aottercdn.com/trek/media/d01821dc-d0e6-41f3-85c8-d9551d46d7a8.js"
+    ></script> -->
+
+    <script>
+      var pbjs = pbjs || {}
+
+      var domId = 'test-div'
+
+      function init() {
+        config()
+        loadPrebid()
+      }
+
+      async function config() {
+        var PREBID_TIMEOUT = 1000
+        var FAILSAFE_TIMEOUT = 3000
+        var adUnits = [
+          {
+            code: domId,
+            mediaTypes: {
+              banner: {
+                sizes: [
+                  [1, 1],
+                  [300, 250],
+                ],
+              },
+            },
+            floors: {
+              default: 0.1,
+            },
+            bids: [
+              {
+                bidder: 'aseal',
+                params: { placeUid: '31d1170d-477e-44ae-b817-c3ae23f4173a' },
+              },
+            ],
+          },
+          {
+            code: 'test-div2',
+            mediaTypes: {
+              banner: {
+                sizes: [
+                  [1, 1],
+                  [300, 250],
+                ],
+              },
+            },
+            floors: {
+              default: 0.1,
+            },
+            bids: [
+              {
+                bidder: 'aseal',
+                params: { placeUid: '31d1170d-477e-44ae-b817-c3ae23f4173a' },
+              },
+            ],
+          },
+        ]
+
+        window.adUnits = adUnits
+
+        const adm = await fetch('../test-adm-sdkv3.html').then((res) =>
+          res.text()
+        )
+        const adm2 = await fetch('./test-adm.html').then((res) => res.text())
+        var blob = new Blob(
+          [`<a id="a"><b id="b" style="color: pink;">hey!</b></a>`],
+          {
+            type: 'text/html',
+          }
+        )
+        var newurl = window.URL.createObjectURL(blob)
+
+        pbjs.que = pbjs.que || []
+        pbjs.que.push(function () {
+          // pbjs settings
+          pbjs.setConfig({
+            aseal: {
+              clientId: 'r+ovw5R3XOyff8FFFZd/',
+            },
+            // https://docs.prebid.org/dev-docs/modules/debugging.html
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: (bidRequest) => {
+                    // intercept all  bids that have adUnitCode === 'test-div'
+                    // adUnitCode: 'div-gpt-ad-1642581403289-0',
+                    console.log('bidRequest', bidRequest)
+
+                    return true
+
+                    // return bidRequest.bidder === 'aseal'
+                  },
+                  then: (bidRequest) => {
+                    console.log('bidRequestThen', bidRequest)
+
+                    return {
+                      // mock their response with sane defaults and `cpm: 10`
+                      cpm: 10,
+                      // ad: adm2, //`hello world  ${bidRequest.adUnitCode}`, // adm,
+                      hello: 1123,
+                      adUrl: './test-adm.html', // newurl, // 'https://fakeimg.pl/300x250/',
+                    }
+                  },
+                },
+              ],
+            },
+          })
+
+          pbjs.addAdUnits(adUnits)
+          pbjs.requestBids({
+            bidsBackHandler: renderAllAdUnits,
+            timeout: PREBID_TIMEOUT,
+          })
+        })
+      }
+
+      function renderAllAdUnits() {
+        // var winners = pbjs.getHighestCpmBids()
+        // console.log('loggin from trek tm.js: winningBids', winners)
+        // for (var i = 0; i < winners.length; i++) {
+        //   renderOne(winners[i])
+        // }
+
+        var winners = pbjs.getHighestCpmBids()
+        for (var i = 0; i < adUnits.length; i++) {
+          var adUnit = adUnits[i]
+          var winningBid = winners.find(
+            (winBid) => winBid.adUnitCode === adUnit.code
+          )
+
+          renderOne(winningBid, adUnit)
+        }
+      }
+
+      async function renderOne(winningBid) {
+        // const adm = await fetch('./test-adm-sdkv3.html').then((res) => res.text())
+
+        if (winningBid && winningBid.adId) {
+          console.log(
+            'loggin from trek tm.js: winningBid for adUnitCode: ' +
+              winningBid.adUnitCode,
+            winningBid
+          )
+          var div = document.getElementById(winningBid.adUnitCode)
+          if (div) {
+            let iframe = document.createElement('iframe')
+            iframe.style.border = '0'
+            iframe.style.objectFit = 'cover'
+            iframe.style.objectPosition = 'center'
+            div.appendChild(iframe)
+            var iframeDoc = iframe.contentWindow.document
+
+            var adServerTargeting = pbjs.getAdserverTargetingForAdUnitCode(
+              winningBid.adUnitCode
+            )
+
+            // const str = `
+            //   <div>123<\/div>
+            //   <script src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@latest/dist/creative.js"><\/script>
+            //   <script>
+            //     var ucTagData = {};
+            //     ucTagData.adServerDomain = "";
+            //     ucTagData.pubUrl = 'https://google.com'
+            //     ucTagData.targetingMap = {}
+            //     ucTagData.hbPb = 1
+            //     ucTagData.adId = '${winningBid.adId}'
+
+            //     try {
+            //       ucTag.renderAd(document, ucTagData);
+            //     } catch (e) {
+            //       console.log(e);
+            //     }
+            //   <\/script>`
+
+            // iframeDoc.open()
+            // iframeDoc.write(str)
+            // iframeDoc.close()
+
+            // winningBid.ad = str
+
+            pbjs.renderAd(iframeDoc, winningBid.adId, {
+              clickThrough: 'https://aotter.net',
+            })
+          }
+        }
+      }
+
+      function loadPrebid() {
+        var scriptElem = document.createElement('script')
+        scriptElem.async = true
+        scriptElem.src =
+          'https://static.aottercdn.com/trek/media/d01821dc-d0e6-41f3-85c8-d9551d46d7a8.js'
+        document.body.appendChild(scriptElem)
+      }
+
+      if (!document.body) {
+        document.addEventListener('DOMContentLoaded', function () {
+          init()
+        })
+      } else {
+        init()
+      }
+    </script>
+  </head>
+  <body>
+    <h2>從電少的標籤腳本修改 (debugging mode)</h2>
+    <a
+      target="_blank"
+      href="https://trek.aotter.net/clam/show?appName=trek&id=9ee1ea1d-cc69-4138-93a3-98311bad63af&collectionName=trekTagScript"
+      >標籤腳本</a
+    >
+    <a
+      target="_blank"
+      href="https://bb8.aotter.net/dr/tm.js?cid=r%2Bovw5R3XOyff8FFFZd%2F"
+      >腳本連結</a
+    >
+    <div id="test-div"></div>
+    <div id="test-div2"></div>
+  </body>
+</html>
