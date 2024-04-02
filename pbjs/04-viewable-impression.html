@@ -61,10 +61,12 @@
     </script>
 
     <!-- 載入測試用 prebid.js -->
-    <script
+    <!-- <script
       async
       src="https://static.aottercdn.com/trek/media/d01821dc-d0e6-41f3-85c8-d9551d46d7a8.js"
-    ></script>
+    ></script> -->
+
+    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
 
     <script>
       // 將 adUnits 的函式推入 pbjs.que
@@ -99,10 +101,9 @@
         return frame
       }
 
-      function renderAllAdUnits(bidResponses) {
-        console.log('bidResponses', bidResponses)
-
+      function renderAllAdUnits() {
         var winners = pbjs.getHighestCpmBids()
+
         for (var i = 0; i < adUnits.length; i++) {
           var adUnit = adUnits[i]
           var winningBid = winners.find(
@@ -178,6 +179,30 @@
           aseal: {
             clientId: 'yEFcFoJaruNorh5RqtuR',
           },
+          bidViewabilityIO: {
+            enabled: true,
+          },
+        })
+
+        pbjs.onEvent('bidViewable', function (bid) {
+          console.log('got bid details in bidViewable event', bid)
+        })
+
+        pbjs.setBidderConfig({
+          bidders: ['aseal'],
+          config: {
+            ortb2: {
+              // app: {},
+              // site: {},
+              user: {
+                ext: {
+                  data: {
+                    fpId: 'fpId-test-123456',
+                  },
+                },
+              },
+            },
+          },
         })
 
         pbjs.requestBids({
@@ -193,7 +218,7 @@
 
     <div id="test-div"></div>
 
-    <p style="padding-top: 10px"></p>
+    <p style="padding-top: 1000px"></p>
 
     <div id="test-div2"></div>
 
