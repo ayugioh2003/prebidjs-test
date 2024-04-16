@@ -30,7 +30,7 @@
           },
           bids: [
             {
-              bidder: 'aseal',
+              bidder: 'asealRMN',
               params: {
                 placeUid: '5a41c4d0-b268-43b2-9536-d774f46c33bf',
               },
@@ -66,7 +66,10 @@
       src="https://static.aottercdn.com/trek/media/d01821dc-d0e6-41f3-85c8-d9551d46d7a8.js"
     ></script> -->
 
-    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    <script
+      async
+      src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"
+    ></script>
 
     <script>
       // 將 adUnits 的函式推入 pbjs.que
@@ -135,21 +138,8 @@
             const iframeDoc = iframe.contentWindow.document
             pbjs.renderAd(iframeDoc, winningBid.adId)
 
-            // most browsers have a default margin of 8px . We add those after prebid has written to the iframe.
-            // internally prebid uses document.write or inserts an element. Either way, this is safe to do here.
-            // document.write is sync.
-            // see https://github.com/prebid/Prebid.js/blob/92daa81f277598cbed486cf8be01ce796aa80c8f/src/prebid.js#L555-L588
-
-            // you may also use "all: unset".
-            // @see https://www.youtube.com/shorts/z47iLmBeRXY
-
-            const normalizeCss = `/*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */button,hr,input{overflow:visible}progress,sub,sup{vertical-align:baseline}[type=checkbox],[type=radio],legend{box-sizing:border-box;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%}body{margin:0}details,main{display:block}h1{font-size:2em;margin:.67em 0}hr{box-sizing:content-box;height:0}code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}a{background-color:transparent}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:bolder}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}img{border-style:none}button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}button,select{text-transform:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]::-moz-focus-inner,[type=reset]::-moz-focus-inner,[type=submit]::-moz-focus-inner,button::-moz-focus-inner{border-style:none;padding:0}[type=button]:-moz-focusring,[type=reset]:-moz-focusring,[type=submit]:-moz-focusring,button:-moz-focusring{outline:ButtonText dotted 1px}fieldset{padding:.35em .75em .625em}legend{color:inherit;display:table;max-width:100%;white-space:normal}textarea{overflow:auto}[type=number]::-webkit-inner-spin-button,[type=number]::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}[type=search]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}[hidden],template{display:none}`
-            const iframeStyle = iframeDoc.createElement('style')
-            iframeStyle.appendChild(iframeDoc.createTextNode(normalizeCss))
-            iframeDoc.head.appendChild(iframeStyle)
-
             pbjs.onEvent('bidViewable', function (bid) {
-              console.log('got bid details in bidViewable event - in renderOne', bid)
+              console.log('got bid details in bidViewable event2 - in renderOne', bid)
             })
           }
         } else {
@@ -179,12 +169,92 @@
     <script>
       // 設定 config、請求 bids
       pbjs.que.push(function () {
+        // const myPrivateAdapter = function myAdapter() {
+        //     return {
+        //         callBids: function(p) {
+        //           console.log('hello world')
+        //         }
+        //     };
+        // };
+
+        var myPrivateAdapter = function myAdapter() {
+          return {
+            callBids: function (bidRequest, ...others) {
+              // console.log('others', others)
+              // console.log('bidRequest', bidRequest, bidRequest.bidsReceived)
+              // console.log('callBids')
+
+              var bids = bidRequest.bids || []
+              // console.log('privateBids', bids)
+
+
+              bids.forEach(function (bid) {
+                // In a real adapter, you would make an HTTP request to the bidder endpoint here
+                // For demonstration, we'll simulate a bid response
+                var bidResponse = {
+                  requestId: bid.bidId, // Match request ID
+                  cpm: 1.0, // Mock CPM value
+                  width: 300, // Mock width
+                  height: 250, // Mock height
+                  creativeId: '12345', // Mock creative ID
+                  currency: 'USD', // Currency
+                  netRevenue: true, // Net revenue
+                  ttl: 300, // Time to live
+                  ad: '<div>Mock ad content</div>', // Mock ad markup
+                }
+
+                // Pass the bid response to Prebid.js
+                // console.log('pbjs.bidderSettings.adserverTargeting', pbjs.bidderSettings)
+                // pbjs.bidderSettings.adserverTargeting.push(bidResponse)
+              })
+
+              console.log('2222222')
+
+            },
+          }
+        }
+
+        pbjs.registerBidAdapter(myPrivateAdapter, 'asealRMN')
+
         pbjs.setConfig({
           aseal: {
             clientId: 'yEFcFoJaruNorh5RqtuR',
+            msg: 'hihi'
           },
           bidViewabilityIO: {
             enabled: true,
+          },
+          userSync: {
+            userIds: [
+              {
+                name: 'id5Id',
+                bidders: ['aseal'],
+                params: {
+                  partner: 1575, // change to the Partner Number you received from ID5
+                  externalModuleUrl:
+                    'https://cdn.id5-sync.com/api/1.0/id5PrebidModule.js',
+                  // pd: 'MT1iNTBjY...', // optional, see table above for a link to how to generate this
+                  // abTesting: {
+                  //   // optional
+                  //   enabled: true, // false by default
+                  //   controlGroupPct: 0.1, // valid values are 0.0 - 1.0 (inclusive)
+                  // },
+                },
+                storage: {
+                  type: 'html5', // "html5" is the required storage type
+                  name: 'id5id', // "id5id" is the required storage name
+                  expires: 90, // storage lasts for 90 days
+                  refreshInSeconds: 8 * 3600, // refresh ID every 8 hours to ensure it's fresh
+                },
+              },
+              {
+                name: 'uid2',
+                params: {
+                  uid2ServerCookie: 'uid2_identity',
+                },
+              },
+            ],
+            auctionDelay: 50, // 50ms maximum auction delay, applies to all userId modules
           },
         })
 
@@ -195,6 +265,11 @@
         pbjs.setBidderConfig({
           bidders: ['aseal'],
           config: {
+            // aseal: {
+            //   hahaha: '123123'
+            // },
+            // msg2: 'test',
+            // customArg: "customVal",
             ortb2: {
               // app: {},
               // site: {},
@@ -207,7 +282,7 @@
               },
             },
           },
-        })
+        }, true)
 
         pbjs.requestBids({
           timeout: 2000,
@@ -222,7 +297,7 @@
 
     <div id="test-div"></div>
 
-    <p style="padding-top: 1000px"></p>
+    <p style="padding-top: 10px"></p>
 
     <div id="test-div2"></div>
 
