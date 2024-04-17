@@ -30,7 +30,8 @@
           },
           bids: [
             {
-              bidder: 'asealRMN',
+              // 用來替換 private adapter 的 bidder。目前有 asealRmn 和 asealRmn2
+              bidder: 'asealRmn2', 
               params: {
                 placeUid: '5a41c4d0-b268-43b2-9536-d774f46c33bf',
               },
@@ -139,7 +140,10 @@
             pbjs.renderAd(iframeDoc, winningBid.adId)
 
             pbjs.onEvent('bidViewable', function (bid) {
-              console.log('got bid details in bidViewable event2 - in renderOne', bid)
+              console.log(
+                'got bid details in bidViewable event2 - in renderOne',
+                bid
+              )
             })
           }
         } else {
@@ -166,17 +170,20 @@
       }
     </script>
 
-    <script>
+    <script type="module">
+      /**
+       * 用 bun.js 從 prebid.js REPO 中 bundle 出來的
+       * 用 gulp 跟 rollup build 出來的 code 都不能用 orz
+       * 
+       * npm i -g bun.js
+       * bun build ./modules/asealBidAdapter.js --outdir .
+       * https://bun.sh/docs/bundler
+       */
+      import { registerBidderRMN, specRMN } from './asealBidAdapter.js'
+
       // 設定 config、請求 bids
       pbjs.que.push(function () {
-        // const myPrivateAdapter = function myAdapter() {
-        //     return {
-        //         callBids: function(p) {
-        //           console.log('hello world')
-        //         }
-        //     };
-        // };
-
+        // way1
         var myPrivateAdapter = function myAdapter() {
           return {
             callBids: function (bidRequest, ...others) {
@@ -186,7 +193,6 @@
 
               var bids = bidRequest.bids || []
               // console.log('privateBids', bids)
-
 
               bids.forEach(function (bid) {
                 // In a real adapter, you would make an HTTP request to the bidder endpoint here
@@ -208,18 +214,25 @@
                 // pbjs.bidderSettings.adserverTargeting.push(bidResponse)
               })
 
-              console.log('2222222')
-
+              console.log('register asealRmn')
             },
           }
         }
 
-        pbjs.registerBidAdapter(myPrivateAdapter, 'asealRMN')
+        pbjs.registerBidAdapter(myPrivateAdapter, 'asealRmn')
 
+        // way2
+        // 目前遇到 error
+        // prebid.js:6 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'renderer')
+        
+        // 拿不到 pbjs instance 內部的 auctionManager
+        // 拿不到 adUnitRenderer
+        registerBidderRMN(specRMN)
+
+        // others
         pbjs.setConfig({
           aseal: {
             clientId: 'yEFcFoJaruNorh5RqtuR',
-            msg: 'hihi'
           },
           bidViewabilityIO: {
             enabled: true,
@@ -262,27 +275,22 @@
           console.log('got bid details in bidViewable event', bid)
         })
 
-        pbjs.setBidderConfig({
-          bidders: ['aseal'],
-          config: {
-            // aseal: {
-            //   hahaha: '123123'
-            // },
-            // msg2: 'test',
-            // customArg: "customVal",
-            ortb2: {
-              // app: {},
-              // site: {},
-              user: {
-                ext: {
-                  data: {
-                    fpId: 'fpId-test-123456',
+        pbjs.setBidderConfig(
+          {
+            bidders: ['aseal'],
+            config: {
+              ortb2: {
+                user: {
+                  ext: {
+                    data: {
+                      fpId: 'fpId-test-123456',
+                    },
                   },
                 },
               },
             },
-          },
-        }, true)
+          }
+        )
 
         pbjs.requestBids({
           timeout: 2000,
@@ -304,5 +312,7 @@
     <p style="padding-top: 10px"></p>
 
     <div id="test-passback"></div>
+
+
   </body>
 </html>

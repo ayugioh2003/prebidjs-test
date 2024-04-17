@@ -3798,6 +3798,7 @@ function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auction
     _timelyBidders.add(bidderCode);
   }
   function callBids() {
+    console.log('callBids init')
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
     let bidRequests = adapterManager2.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
@@ -4118,6 +4119,19 @@ var init_auction = __esm(() => {
     });
     bidObject.timeToRespond = bidObject.responseTimestamp - bidObject.requestTimestamp;
     events.emit(CONSTANTS5.EVENTS.BID_ADJUSTMENT, bidObject);
+    console.log('rmn2 index', index)
+    console.log('rmn2 bidObject', bidObject)
+    console.log('rmn2 getAdUnit', index.getAdUnit)
+    // 好像從這邊壞掉：index.getAdUnit(bidObject).renderer
+    // Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'renderer')
+    // 應該是 prebid.js 執行時，index.getAdUnit(bidObject) 找不到東西
+    // 然後實際是 prebid.js 的 getPreparedBidForAuction 邏輯在執行，不是現在 asealBidAdapter.js 的 code 在執行
+    // 感覺有些狀態被藏在 pbjs 的實例裡面，這邊無法取得也無法設定
+  
+    // 感覺想要繼續往前的話，可以嘗試的方向
+    // 1. 讓 pbjs.instance 能夠讀到 private adapter adunit 的 renderer
+    // 2. 自己從頭實作 private adapter 的所有邏輯，包含 viewable, id module
+    // 3. 修改 prebid.js source code，請 publisher 改裝我們自己 build 出來的 code
     const adUnitRenderer = index.getAdUnit(bidObject).renderer;
     const bidObjectMediaType = bidObject.mediaType;
     const mediaTypes2 = index.getMediaTypes(bidObject);
@@ -5303,10 +5317,15 @@ var init_bidfactory = __esm(() => {
 
 // src/adapters/bidderFactory.js
 function registerBidder(spec) {
+  console.log('rmn2 spec', spec)
   const mediaTypes3 = Array.isArray(spec.supportedMediaTypes) ? { supportedMediaTypes: spec.supportedMediaTypes } : undefined;
   function putBidder(spec2) {
     const bidder = newBidder(spec2);
-    adapterManager_default.registerBidAdapter(bidder, spec2.code, mediaTypes3);
+    pbjs.registerBidAdapter(() => bidder, spec2.code, mediaTypes3);
+    // adapterManager_default.registerBidAdapter(bidder, spec2.code, mediaTypes3);
+    console.log('rmn2 pubBidder')
+    console.log('rmn2 bidder', bidder)
+    console.log('rmn2 code', spec2.code)
   }
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
@@ -5325,12 +5344,16 @@ function registerBidder(spec) {
   }
 }
 function newBidder(spec) {
+  console.log('rmn2 newBidder')
+  hook.ready()
   return Object.assign(new Adapter(spec.code), {
     getSpec: function() {
       return Object.freeze(spec);
     },
     registerSyncs,
     callBids: function(bidderRequest, addBidResponse2, done, ajax5, onTimelyResponse, configEnabledCallback) {
+      console.log('rmn2 callbids')
+      console.log('rmn2 callBids params', { bidderRequest, addBidResponse2, done, ajax5, onTimelyResponse, configEnabledCallback })
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -5362,8 +5385,12 @@ function newBidder(spec) {
         }
       });
       processBidderRequests(spec, validBidRequests, bidderRequest, ajax5, configEnabledCallback, {
-        onRequest: (requestObject) => emit(constants.default.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
+        onRequest: (requestObject) => {
+          console.log('rmn2 onRequest')
+          emit(constants.default.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject)
+        },
         onResponse: (resp) => {
+          console.log('rmn2 onResponse')
           onTimelyResponse(spec.code);
           responses.push(resp);
         },
@@ -5374,6 +5401,7 @@ function newBidder(spec) {
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
         },
         onBid: (bid) => {
+          console.log('rmn2 onBid')
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
             bid.originalCpm = bid.cpm;
@@ -5514,6 +5542,7 @@ var init_bidderFactory = __esm(() => {
   COMMON_BID_RESPONSE_KEYS = ["cpm", "ttl", "creativeId", "netRevenue", "currency"];
   DEFAULT_REFRESHIN_DAYS = 1;
   processBidderRequests = hook("sync", function(spec, bids, bidderRequest, ajax5, wrapCallback, { onRequest, onResponse, onError, onBid, onCompletion }) {
+    console.log('rmn2 processBidderRequests')
     let requests = spec.buildRequests(bids, bidderRequest);
     if (!requests || requests.length === 0) {
       onCompletion();
@@ -5542,6 +5571,7 @@ var init_bidderFactory = __esm(() => {
           requestDone();
           return;
         }
+        console.log('rmn2 bid2', bids2)
         if (bids2) {
           if (isArray(bids2)) {
             bids2.forEach(onBid);
@@ -5647,15 +5677,17 @@ var canAccessTopWindow = () => {
   }
 };
 var spec = {
-  code: BIDDER_CODE,
-  aliases: ["aotter", "trek"],
+  code: 'asealRmn2', // BIDDER_CODE,
+  // aliases: ["aotter", "trek"],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: (bid) => !!bid.params.placeUid && typeof bid.params.placeUid === "string",
   buildRequests: (validBidRequests, bidderRequest) => {
+    console.log('rmn2 buildRequests')
     if (validBidRequests.length === 0) {
       return [];
     }
-    const clientId = config.getConfig("aseal.clientId") || "";
+    // const clientId = config.getConfig("aseal.clientId") || "";
+    const clientId = pbjs.getConfig("aseal.clientId") || "";
     const windowTop = getWindowTop();
     const windowSelf = getWindowSelf();
     const w = canAccessTopWindow() ? windowTop : windowSelf;
@@ -5683,7 +5715,8 @@ var spec = {
         "x-aotter-version": HEADER_AOTTER_VERSION
       }
     };
-    return [
+
+    const result = [
       {
         method: "POST",
         url: API_ENDPOINT,
@@ -5691,8 +5724,12 @@ var spec = {
         options
       }
     ];
+
+    console.log('rmn2 result', result)
+    return result
   },
   interpretResponse: (serverResponse, bidRequest) => {
+    console.log('rmn2 interpretResponse')
     if (!Array.isArray(serverResponse.body)) {
       return [];
     }
@@ -5700,13 +5737,15 @@ var spec = {
     return bidResponses;
   }
 };
-registerBidder(spec);
+// registerBidder(spec);
 export {
   storage3 as storage,
-  spec,
+  spec as specRMN,
   WEB_SESSION_ID_KEY,
   SUPPORTED_AD_TYPES,
   HEADER_AOTTER_VERSION,
   BIDDER_CODE,
-  API_ENDPOINT
+  API_ENDPOINT,
+  registerBidder as registerBidderRMN,
 };
+
